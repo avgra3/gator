@@ -1,14 +1,12 @@
 package main
 
 import (
-	// "fmt"
 	"database/sql"
+	"github.com/avgra3/gator/internal/database"
+	_ "github.com/lib/pq"
 	"internal/config"
 	"log"
 	"os"
-
-	"github.com/avgra3/gator/internal/database"
-	_ "github.com/lib/pq"
 	//"github.com/avgra3/gator/internal/config"
 )
 
@@ -32,6 +30,8 @@ func main() {
 	// Registered commands
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerGetUsers)
 
 	// Getting current args
 	args := os.Args
@@ -54,7 +54,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Write config to file
-	config.SetUser(cmdArgs[0], &currentConfig)
-
 }

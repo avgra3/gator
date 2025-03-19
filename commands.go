@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/avgra3/gator/internal/database"
+	"github.com/google/uuid"
 	"internal/config"
 	"log"
 	"time"
-
-	"github.com/avgra3/gator/internal/database"
-	"github.com/google/uuid"
 )
 
 // Types needed
@@ -59,9 +58,13 @@ func handlerLogin(s *state, cmd command) error {
 		return err
 	}
 	(*s).cfg.CurrentUserName = cmd.args[0]
-	message := fmt.Sprintf("The user \"%v\" has been set", (*s).cfg.CurrentUserName)
 
-	fmt.Println(message)
+	// Save the config file
+	config.SetUser((*s).cfg.CurrentUserName, (*s).cfg)
+
+	// Send message to cli
+	message := fmt.Sprintf("The user \"%v\" has been set", (*s).cfg.CurrentUserName)
+	log.Println(message)
 	return nil
 }
 
@@ -80,7 +83,7 @@ func handlerRegister(s *state, cmd command) error {
 	ctx := context.Background()
 	user, err := s.db.CreateUser(ctx, newUser)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	// Success message
 	log.Printf("User \"%v\" successfully added!\n", newUser.Name)
@@ -91,5 +94,32 @@ func handlerRegister(s *state, cmd command) error {
 	}
 	handlerLogin(s, newCmd)
 
+	return nil
+}
+
+func handlerReset(s *state, cmd command) error {
+	ctx := context.Background()
+	err := s.db.DeleteAllUsers(ctx)
+	if err != nil {
+		return err
+	}
+	log.Println("Successfully deleted all users from users table!")
+	return nil
+}
+
+func handlerGetUsers(s *state, cmd command) error {
+	ctx := context.Background()
+	names, err := s.db.GetUsers(ctx)
+	currentUser := s.cfg.CurrentUserName
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		if name == currentUser {
+			log.Printf("* %v (current)\n", name)
+		} else {
+			log.Printf("* %v\n", name)
+		}
+	}
 	return nil
 }
