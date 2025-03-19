@@ -12,6 +12,7 @@ import (
 const getUsers = `-- name: GetUsers :many
 SELECT name
 FROM users
+ORDER BY updated_at DESC
 `
 
 func (q *Queries) GetUsers(ctx context.Context) ([]string, error) {

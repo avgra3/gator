@@ -104,6 +104,13 @@ func handlerReset(s *state, cmd command) error {
 		return err
 	}
 	log.Println("Successfully deleted all users from users table!")
+
+	err = s.db.DeleteAllFeeds(ctx)
+	if err != nil {
+		return err
+	}
+	log.Println("Successfully deleted all feeds from feeds table!")
+
 	return nil
 }
 
@@ -132,5 +139,50 @@ func handlerAgg(s *state, cmd command) error {
 		return err
 	}
 	log.Printf("%#v\n", rssFeedPtr)
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.args) < 2 {
+		err := errors.New("You must supply both a name for the feed and the url, in that order")
+		return err
+	}
+	// Need to get the current user's id
+	currentUser := (*s).cfg.CurrentUserName
+	ctx := context.Background()
+	user, err := s.db.GetUser(ctx, currentUser)
+	if err != nil {
+		return err
+	}
+	// For possible null uuid
+	nullUUID := uuid.NullUUID{
+		UUID:  user.ID,
+		Valid: true,
+	}
+
+	// Make new feed
+	newID := uuid.New()
+	createdAt := time.Now()
+	updatedAt := createdAt
+	feedName := cmd.args[0]
+	feedURL := cmd.args[1]
+	feedArgs := database.CreateFeedParams{
+		ID:        newID,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+		Name:      feedName,
+		Url:       feedURL,
+		UserID:    nullUUID,
+	}
+
+	feed, err := s.db.CreateFeed(ctx, feedArgs)
+	if err != nil {
+		return err
+	}
+
+	// If everything went well:
+	// we want to print out the fields of the new feed record
+	log.Printf("%#v\n", feed)
+
 	return nil
 }
