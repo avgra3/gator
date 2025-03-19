@@ -1,14 +1,21 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"internal/config"
+	"log"
+	"time"
+
+	"github.com/avgra3/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 // Types needed
 type state struct {
-	ptrConfig *config.Config
+	db  *database.Queries
+	cfg *config.Config
 }
 
 type command struct {
@@ -40,9 +47,49 @@ func handlerLogin(s *state, cmd command) error {
 		err := errors.New("The login handler expects a single argument: the username, which was not provided")
 		return err
 	}
+	// Error if user does not exist:
+	ctx := context.Background()
+	user, err := s.db.GetUser(ctx, cmd.args[0])
+	if err != nil {
+		log.Println("here")
+		return err
+	}
+	if (user.Name == "" || user == database.User{}) {
+		err = errors.New("Unknown user")
+		return err
+	}
+	(*s).cfg.CurrentUserName = cmd.args[0]
+	message := fmt.Sprintf("The user \"%v\" has been set", (*s).cfg.CurrentUserName)
 
-	(*s).ptrConfig.CurrentUserName = cmd.args[0]
-	message := fmt.Sprintf("The user \"%v\" has been set", (*s).ptrConfig.CurrentUserName)
 	fmt.Println(message)
+	return nil
+}
+
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.args) == 0 {
+		err := errors.New("A username must be provided in order for a user to be registered.")
+		return err
+	}
+	(*s).cfg.CurrentUserName = cmd.args[0]
+	newUser := database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      cmd.args[0],
+	}
+	ctx := context.Background()
+	user, err := s.db.CreateUser(ctx, newUser)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Success message
+	log.Printf("User \"%v\" successfully added!\n", newUser.Name)
+	// Set user to current user
+	newCmd := command{
+		args: []string{user.Name},
+		name: "login",
+	}
+	handlerLogin(s, newCmd)
+
 	return nil
 }

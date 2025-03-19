@@ -2,9 +2,13 @@ package main
 
 import (
 	// "fmt"
+	"database/sql"
 	"internal/config"
 	"log"
 	"os"
+
+	"github.com/avgra3/gator/internal/database"
+	_ "github.com/lib/pq"
 	//"github.com/avgra3/gator/internal/config"
 )
 
@@ -14,14 +18,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// DB Connection
+	db, err := sql.Open("postgres", currentConfig.DBUrl)
+	dbQueries := database.New(db)
+
 	// Create a new state
-	s := state{ptrConfig: &currentConfig}
+	s := state{cfg: &currentConfig, db: dbQueries}
 
 	// Create commands struct
 	cmds := commands{
 		commandNames: make(map[string]func(*state, command) error),
 	}
+	// Registered commands
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 
 	// Getting current args
 	args := os.Args
@@ -47,11 +57,4 @@ func main() {
 	// Write config to file
 	config.SetUser(cmdArgs[0], &currentConfig)
 
-	// read config and print contents of config struct to terminal
-	// readConfigFile, err := config.Read()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// output := fmt.Sprintf("DB Url: %v\nCurrent Username: %v", readConfigFile.DBUrl, readConfigFile.CurrentUserName)
-	// fmt.Println(output)
 }
