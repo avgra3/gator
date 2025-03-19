@@ -32,6 +32,7 @@ func main() {
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerGetUsers)
+	cmds.register("agg", handlerAgg)
 
 	// Getting current args
 	args := os.Args

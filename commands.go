@@ -123,3 +123,14 @@ func handlerGetUsers(s *state, cmd command) error {
 	}
 	return nil
 }
+
+func handlerAgg(s *state, cmd command) error {
+	ctx := context.Background()
+	baseUrl := "https://www.wagslane.dev/index.xml"
+	rssFeedPtr, err := fetchFeed(ctx, baseUrl)
+	if err != nil {
+		return err
+	}
+	log.Printf("%#v\n", rssFeedPtr)
+	return nil
+}
