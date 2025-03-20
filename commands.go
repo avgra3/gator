@@ -274,3 +274,29 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 
 	return nil
 }
+
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.args) < 1 {
+		err := errors.New("You must supply a url to unfollow")
+		return err
+	}
+	// Need to get the current user's id
+	ctx := context.Background()
+	// For possible null uuid
+	nullUUID := uuid.NullUUID{
+		UUID:  user.ID,
+		Valid: true,
+	}
+
+	args := database.UnfollowParams{
+		UserID: nullUUID,
+		Url:    cmd.args[0],
+	}
+
+	err := s.db.Unfollow(ctx, args)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
