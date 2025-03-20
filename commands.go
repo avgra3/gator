@@ -142,18 +142,13 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) < 2 {
 		err := errors.New("You must supply both a name for the feed and the url, in that order")
 		return err
 	}
 	// Need to get the current user's id
-	currentUser := (*s).cfg.CurrentUserName
 	ctx := context.Background()
-	user, err := s.db.GetUser(ctx, currentUser)
-	if err != nil {
-		return err
-	}
 	// For possible null uuid
 	nullUUID := uuid.NullUUID{
 		UUID:  user.ID,
@@ -189,7 +184,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		args: []string{feedArgs.Url},
 		name: "follow",
 	}
-	handlerFollow(s, newCmd)
+	handlerFollow(s, newCmd, user)
 
 	return nil
 }
@@ -208,7 +203,7 @@ func handlerGetFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	// If no url arg, fail
 	if len(cmd.args) < 1 {
 		newErr := errors.New("No url provided. Please add a url to be able to follow a new feed")
@@ -219,10 +214,10 @@ func handlerFollow(s *state, cmd command) error {
 	ctx := context.Background()
 
 	// Set up the feed follow params
-	user, err := s.db.GetUser(ctx, (*s).cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
+	//user, err := s.db.GetUser(ctx, (*s).cfg.CurrentUserName)
+	//if err != nil {
+	//	return err
+	//}
 	feed, err := s.db.GetFeedByUrl(ctx, url)
 	if err != nil {
 		return err
@@ -254,14 +249,14 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	// Add context
 	ctx := context.Background()
 	// Get current user's id
-	user, err := s.db.GetUser(ctx, (*s).cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
+	// user, err := s.db.GetUser(ctx, (*s).cfg.CurrentUserName)
+	// if err != nil {
+	// 	return err
+	// }
 	// Get all feeds followed by user
 	feedsFollowed, err := s.db.GetFeedFollow(ctx, uuid.NullUUID{
 		UUID:  user.ID,
