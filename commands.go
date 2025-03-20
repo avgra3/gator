@@ -184,5 +184,98 @@ func handlerAddFeed(s *state, cmd command) error {
 	// we want to print out the fields of the new feed record
 	log.Printf("%#v\n", feed)
 
+	// We also want to make a new feed follow for the current user
+	newCmd := command{
+		args: []string{feedArgs.Url},
+		name: "follow",
+	}
+	handlerFollow(s, newCmd)
+
+	return nil
+}
+
+func handlerGetFeeds(s *state, cmd command) error {
+	ctx := context.Background()
+	allFeeds, err := s.db.GetFeeds(ctx)
+	if err != nil {
+		return err
+	}
+	for _, feed := range allFeeds {
+		row := fmt.Sprintf("Feed Name: %v\tUrl: %v\tAdded by: %v\n", feed.Feedname, feed.Feedurl, feed.Username)
+		log.Println(row)
+	}
+
+	return nil
+}
+
+func handlerFollow(s *state, cmd command) error {
+	// If no url arg, fail
+	if len(cmd.args) < 1 {
+		newErr := errors.New("No url provided. Please add a url to be able to follow a new feed")
+		return newErr
+	}
+	url := cmd.args[0]
+	// Add context
+	ctx := context.Background()
+
+	// Set up the feed follow params
+	user, err := s.db.GetUser(ctx, (*s).cfg.CurrentUserName)
+	if err != nil {
+		return err
+	}
+	feed, err := s.db.GetFeedByUrl(ctx, url)
+	if err != nil {
+		return err
+	}
+
+	valueToInsert := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID: uuid.NullUUID{
+			UUID:  user.ID,
+			Valid: true,
+		},
+		FeedID: uuid.NullUUID{
+			UUID:  feed.ID,
+			Valid: true,
+		},
+	}
+	// Create a new feed follow record for the current user
+	createdFeedFollow, err := s.db.CreateFeedFollow(ctx, valueToInsert)
+	if err != nil {
+		return err
+	}
+	// Should print the name of the feed
+	// and the current user once the record is created
+	newFeedFollow := fmt.Sprintf("Feed Name: %v\nCurrent user: %v\n", createdFeedFollow.FeedName, createdFeedFollow.UserName)
+	log.Println(newFeedFollow)
+
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error {
+	// Add context
+	ctx := context.Background()
+	// Get current user's id
+	user, err := s.db.GetUser(ctx, (*s).cfg.CurrentUserName)
+	if err != nil {
+		return err
+	}
+	// Get all feeds followed by user
+	feedsFollowed, err := s.db.GetFeedFollow(ctx, uuid.NullUUID{
+		UUID:  user.ID,
+		Valid: true,
+	})
+	if err != nil {
+		return err
+	}
+	// Print out all feedsFollowed
+	log.Printf("%v is following:\n", user.Name)
+	for _, feed := range feedsFollowed {
+		row := fmt.Sprintf("* %v\n", feed)
+		log.Println(row)
+	}
+
 	return nil
 }
