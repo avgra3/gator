@@ -60,6 +60,7 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 
 	// Need to run the Title and Description fields of both the entire channel and all the items
 	feed.Channel.Title = html.UnescapeString(feed.Channel.Title)
+	feed.Channel.Description = html.UnescapeString(feed.Channel.Description)
 	for _, rssFeed := range feed.Channel.Item {
 		rssFeed.Title = html.UnescapeString(rssFeed.Title)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html"
 	"internal/config"
 	"log"
 	"strconv"
@@ -322,6 +323,8 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 	}
 	// Show Posts
 	for _, post := range posts {
+		post.Title = html.UnescapeString(post.Title)
+		post.Description = html.UnescapeString(post.Description)
 		displayPost(post)
 	}
 
@@ -331,5 +334,6 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 func displayPost(post database.Post) {
 	log.Println("\n+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
 	log.Printf("Title: %v\nDescription: %v\n", post.Title, post.Description)
+	log.Printf("Follow the url for more: %v\n", post.Url)
 	log.Println("\n+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
 }
