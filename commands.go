@@ -50,14 +50,13 @@ func handlerLogin(s *state, cmd command) error {
 	ctx := context.Background()
 	user, err := s.db.GetUser(ctx, cmd.args[0])
 	if err != nil {
-		log.Println("here")
 		return err
 	}
 	if (user.Name == "" || user == database.User{}) {
 		err = errors.New("Unknown user")
 		return err
 	}
-	(*s).cfg.CurrentUserName = cmd.args[0]
+	s.cfg.CurrentUserName = cmd.args[0]
 
 	// Save the config file
 	config.SetUser((*s).cfg.CurrentUserName, (*s).cfg)
@@ -73,7 +72,7 @@ func handlerRegister(s *state, cmd command) error {
 		err := errors.New("A username must be provided in order for a user to be registered.")
 		return err
 	}
-	(*s).cfg.CurrentUserName = cmd.args[0]
+	s.cfg.CurrentUserName = cmd.args[0]
 	newUser := database.CreateUserParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
@@ -131,14 +130,23 @@ func handlerGetUsers(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAgg(s *state, cmd command) error {
-	ctx := context.Background()
-	baseUrl := "https://www.wagslane.dev/index.xml"
-	rssFeedPtr, err := fetchFeed(ctx, baseUrl)
+func handlerAgg(s *state, cmd command, user database.User) error {
+	// Current User
+	if len(cmd.args) < 1 {
+		return errors.New("You did not supply a time duration. Please try again.")
+	}
+
+	// Setting up new ticker
+	duration, err := time.ParseDuration(cmd.args[0])
 	if err != nil {
 		return err
 	}
-	log.Printf("%#v\n", rssFeedPtr)
+	log.Printf("Collecting feeds every %v\n", duration)
+	// Now we scrape
+	ticker := time.NewTicker(duration)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s, cmd, user)
+	}
 	return nil
 }
 
@@ -214,10 +222,6 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 	ctx := context.Background()
 
 	// Set up the feed follow params
-	//user, err := s.db.GetUser(ctx, (*s).cfg.CurrentUserName)
-	//if err != nil {
-	//	return err
-	//}
 	feed, err := s.db.GetFeedByUrl(ctx, url)
 	if err != nil {
 		return err

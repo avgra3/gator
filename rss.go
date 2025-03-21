@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
+	"github.com/avgra3/gator/internal/database"
 	"html"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -58,4 +61,31 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	}
 
 	return &feed, nil
+}
+
+// Our aggregator
+func scrapeFeeds(s *state, cmd command, user database.User) error {
+	// Next feed to fetch
+	ctx := context.Background()
+	nextFeed, err := s.db.GetNextFeedToFetch(ctx)
+	if err != nil {
+		return err
+	}
+	// Update the feeds table, with the upcoming feed id
+	err = s.db.MarkFeedFetched(ctx, nextFeed.ID)
+	if err != nil {
+		return err
+	}
+	// Fetch the new feed
+	//fetchFeed(ctx context.Context, feedURL string)
+	rssFeeds, err := fetchFeed(ctx, nextFeed.Url)
+	if err != nil {
+		return err
+	}
+	// Iterate over the items in a loop and print their titles to the console
+	for _, rssFeed := range rssFeeds.Channel.Item {
+		item := fmt.Sprintf("* %v", rssFeed.Title)
+		log.Println(item)
+	}
+	return nil
 }
