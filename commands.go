@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/avgra3/gator/internal/database"
-	"github.com/google/uuid"
 	"internal/config"
 	"log"
+	"strconv"
 	"time"
+
+	"github.com/avgra3/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 // Types needed
@@ -256,11 +258,6 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 func handlerFollowing(s *state, cmd command, user database.User) error {
 	// Add context
 	ctx := context.Background()
-	// Get current user's id
-	// user, err := s.db.GetUser(ctx, (*s).cfg.CurrentUserName)
-	// if err != nil {
-	// 	return err
-	// }
 	// Get all feeds followed by user
 	feedsFollowed, err := s.db.GetFeedFollow(ctx, uuid.NullUUID{
 		UUID:  user.ID,
@@ -284,6 +281,9 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 		err := errors.New("You must supply a url to unfollow")
 		return err
 	}
+	if len(cmd.args) > 1 {
+		log.Println("Extra arguments are being ignored...")
+	}
 	// Need to get the current user's id
 	ctx := context.Background()
 	// For possible null uuid
@@ -303,4 +303,33 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	}
 
 	return nil
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	// Get limit, if not provided, default to 2
+	if len(cmd.args) == 0 {
+		cmd.args = append(cmd.args, "2")
+	}
+	limit, err := strconv.Atoi(cmd.args[0])
+	if err != nil {
+		return err
+	}
+	// Get posts
+	ctx := context.Background()
+	posts, err := s.db.GetPostsForUser(ctx, int32(limit))
+	if err != nil {
+		return err
+	}
+	// Show Posts
+	for _, post := range posts {
+		displayPost(post)
+	}
+
+	return nil
+}
+
+func displayPost(post database.Post) {
+	log.Println("\n+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
+	log.Printf("Title: %v\nDescription: %v\n", post.Title, post.Description)
+	log.Println("\n+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
 }
