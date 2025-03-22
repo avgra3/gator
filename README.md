@@ -1,4 +1,4 @@
-# Gator
+# 🐊 Gator 🐊
 
 A simple cli RSS aggregator written in Go using PostgreSQL.
 
