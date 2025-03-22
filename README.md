@@ -11,7 +11,7 @@ In order to have the app work as expected, you will need the following running.
 - [sqlc](https://sqlc.dev/) _only needed if you are planning on extending functionality to gator._
 - [goose](https://github.com/pressly/goose)
 - [go](https://go.dev/)
-- Copy [.gatorconfig.json](.gatorconfig) to your home directory.
+- Copy [.gatorconfig.json](.gatorconfig.json) to your home directory.
     - On Linux this would be something like "/home/youUserName/.gatorconfig.json"
     - Update it with the below:
 
