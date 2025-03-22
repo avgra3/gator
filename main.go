@@ -57,6 +57,12 @@ func main() {
 		args: cmdArgs,
 		name: cmdName,
 	}
+
+	_, ok := cmds.commandNames[cmdName]
+	if !ok {
+		log.Fatal("The command you entered is not a valid command. Please try again")
+	}
+
 	err = cmds.run(&s, cmd)
 	if err != nil {
 		log.Fatal(err)
